@@ -1,4 +1,4 @@
-#include "encoding.h"
+#include "riscv_encoding.h"
 
 .global hypervisor_start
 
