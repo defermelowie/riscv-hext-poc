@@ -1,4 +1,5 @@
 #include "riscv_encoding.h"
+#include "syscall_encoding.h"
 
 .global _start
 .align 2
@@ -82,25 +83,42 @@ trap_vector:
     beq t0, t1, handle_mcall
     j exit_failure # Unhandled interrupt/exception
 
-# Todo: Handle ecall from U-mode (or VU-mode)
+# Handle ecall from U-mode (or VU-mode)
 handle_ucall:
-    li a0, 0x6
-    j exit_value
+    j exit_failure # Ecalls from VU-mode should be delegated to VS-mode
     
-# Todo: Handle ecall from VS-mode
+# Handle ecall from VS-mode
 handle_vscall:
-    li a0, 0x4
-    j exit_value
+    j exit_failure # Ecalls from VS-mode should be delegated to HS-mode
     
-# Todo: Handle ecall from HS-mode
+# Handle ecall from HS-mode
 handle_hscall:
-    li a0, 0x2
-    j exit_value
+    mv t0, a0 # Save argument to t0
+1:  li t1, ECALL_EXIT_SUCCESS
+    bne t0, t1, 1f
+    j exit_success
+1:  li t1, ECALL_EXIT_FAILURE
+    bne t0, t1, 1f
+    j exit_failure
+1:  li t1, ECALL_CSR_MISA
+    bne t0, t1, 1f
+    csrr a0, misa
+    csrr t2, mepc
+    addi t2, t2, 0x4
+    csrw mepc, t2
+    mret
+1:  li t1, ECALL_CSR_MHARTID
+    bne t0, t1, 1f
+    csrr a0, mhartid
+    csrr t2, mepc
+    addi t2, t2, 0x4
+    csrw mepc, t2
+    mret
+1:  j exit_failure # Unhandled ecall
     
 # Todo: Handle ecall from M-mode
 handle_mcall:
-    li a0, 0x1
-    j exit_value
+    j exit_failure
 
 exit_success:
     fence
