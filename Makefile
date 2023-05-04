@@ -8,7 +8,7 @@ CCFLAGS = -march=rv64g -mabi=lp64 -mcmodel=medany -I$(LIBDIR)
 LDFLAGS = -static -nostdlib
 
 # Sources
-_SRC = firmware.S mmio.S
+_SRC = firmware.S mmio.S hypervisor.S
 SCRDIR = ./src
 OBJDIR = ./build
 LIBDIR = ./lib

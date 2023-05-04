@@ -36,7 +36,7 @@ _start:
     li x29, 0
     li x30, 0
     li x31, 0
-    # Disable multicore (put all cores other than core0 in infinite loop)
+    # Disable multicore (put all cores other than core0 into infinite loop)
     csrr a0, mhartid
 1:  bnez a0, 1b
     # Initialize physical memory protection to allow all accesses
@@ -55,8 +55,52 @@ _start:
     csrw mtvec, t0
     csrwi medeleg, 0
     csrwi mideleg, 0
-    # Todo: return into hypervisor
-1:  j exit_success
+    # Setup trap handler
+1:  la t0, trap_vector
+    csrw mtvec, t0
+    # Return into hypervisor
+    csrr t1, mstatus
+    li t2, 0xffffff7fffffe7ff
+    and t1, t1, t2
+    li t2, 0x0000000000000800
+    or t1, t1, t2
+    csrw mstatus, t1
+    la t1, hypervisor_start
+    csrw mepc, t1
+    mret
+    unimp # Program counter should never arrive here
+
+trap_vector:
+    csrr t0, mcause
+    li t1, CAUSE_USER_ECALL
+    beq t0, t1, handle_ucall
+    li t1, CAUSE_VIRTUAL_SUPERVISOR_ECALL
+    beq t0, t1, handle_vscall
+    li t1, CAUSE_SUPERVISOR_ECALL
+    beq t0, t1, handle_hscall
+    li t1, CAUSE_MACHINE_ECALL
+    beq t0, t1, handle_mcall
+    j exit_failure # Unhandled interrupt/exception
+
+# Todo: Handle ecall from U-mode (or VU-mode)
+handle_ucall:
+    li a0, 0x6
+    j exit_value
+    
+# Todo: Handle ecall from VS-mode
+handle_vscall:
+    li a0, 0x4
+    j exit_value
+    
+# Todo: Handle ecall from HS-mode
+handle_hscall:
+    li a0, 0x2
+    j exit_value
+    
+# Todo: Handle ecall from M-mode
+handle_mcall:
+    li a0, 0x1
+    j exit_value
 
 exit_success:
     fence
@@ -65,3 +109,15 @@ exit_success:
     sw t1, 0(t0)
     sw zero, 4(t0)
 
+exit_failure:
+    fence
+    la t0, tohost
+    li t1, 0x3
+    sw t1, 0(t0)
+    sw zero, 4(t0)
+
+exit_value:
+    fence
+    la t0, tohost
+    sw a0, 0(t0)
+    sw zero, 4(t0)
