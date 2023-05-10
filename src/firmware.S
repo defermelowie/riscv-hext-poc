@@ -54,10 +54,11 @@ _start:
     # Todo: Setup trap delegation
 1:  la t0, 1f
     csrw mtvec, t0
-    csrwi medeleg, 0
+    li t0, 0x500 # Delegate ecalls from VS-mode & U-mode
+    csrw medeleg, t0
     csrwi mideleg, 0
     # Setup trap handler
-1:  la t0, trap_vector
+1:  la t0, firmware_trap_vector
     csrw mtvec, t0
     # Return into hypervisor
     csrr t1, mstatus
@@ -69,27 +70,19 @@ _start:
     la t1, hypervisor_start
     csrw mepc, t1
     mret
-    unimp # Program counter should never arrive here
+    unimp # Should be unreachable
 
-trap_vector:
+firmware_trap_vector:
     csrr t0, mcause
     li t1, CAUSE_USER_ECALL
-    beq t0, t1, handle_ucall
+    beq t0, t1, exit_failure # Ecalls from VU-mode should be delegated to VS-mode
     li t1, CAUSE_VIRTUAL_SUPERVISOR_ECALL
-    beq t0, t1, handle_vscall
+    beq t0, t1, exit_failure # Ecalls from VS-mode should be delegated to HS-mode
     li t1, CAUSE_SUPERVISOR_ECALL
     beq t0, t1, handle_hscall
     li t1, CAUSE_MACHINE_ECALL
     beq t0, t1, handle_mcall
-    j exit_failure # Unhandled interrupt/exception
-
-# Handle ecall from U-mode (or VU-mode)
-handle_ucall:
-    j exit_failure # Ecalls from VU-mode should be delegated to VS-mode
-    
-# Handle ecall from VS-mode
-handle_vscall:
-    j exit_failure # Ecalls from VS-mode should be delegated to HS-mode
+    j exit_failure # Unhandled interrupt/exception causes failure
     
 # Handle ecall from HS-mode
 handle_hscall:
@@ -114,7 +107,7 @@ handle_hscall:
     addi t2, t2, 0x4
     csrw mepc, t2
     mret
-1:  j exit_failure # Unhandled ecall
+1:  j exit_failure # Unhandled ecall causes failure
     
 # Todo: Handle ecall from M-mode
 handle_mcall:
@@ -134,8 +127,8 @@ exit_failure:
     sw t1, 0(t0)
     sw zero, 4(t0)
 
-exit_value:
-    fence
-    la t0, tohost
-    sw a0, 0(t0)
-    sw zero, 4(t0)
+# exit_value:
+#     fence
+#     la t0, tohost
+#     sw a0, 0(t0)
+#     sw zero, 4(t0)
