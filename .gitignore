@@ -1,0 +1,6 @@
+# Compile targets
+*.elf
+*.o
+
+# Log files
+*.log
