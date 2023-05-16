@@ -51,7 +51,7 @@ _start:
 1:  la t0, 1f
     csrw mtvec, t0
     csrwi satp, 0
-    # Todo: Setup trap delegation
+    # Setup trap delegation
 1:  la t0, 1f
     csrw mtvec, t0
     li t0, 0x500 # Delegate ecalls from VS-mode & U-mode

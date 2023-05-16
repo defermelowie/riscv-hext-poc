@@ -18,8 +18,12 @@ hypervisor_start:
     beq a0, zero, 1f
     li a0, ECALL_EXIT_FAILURE
     ecall
+1:  # Setup trap delegation
+    li t0, 0x100 # Delegate ecalls from VU-mode
+    csrw hedeleg, t0
+    csrwi hideleg, 0x0
     # Setup trap handler
-1:  la t0, hypervisor_trap_vector
+    la t0, hypervisor_trap_vector
     csrw stvec, t0
     # Return into guest OS
     csrr t0, sstatus

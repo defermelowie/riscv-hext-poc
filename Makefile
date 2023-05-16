@@ -39,7 +39,7 @@ $(OBJDIR)/%.o: $(SCRDIR)/%.S
 
 # Link objects to target binary
 %.elf: $(OBJDIR)/%.o $(OBJ)
-	$(LD) $(LDFLAGS) -script $(LDSCRIPT) -o $(OUTDIR)/$@ $(OBJ)
+	$(LD) $(LDFLAGS) -script $(LDSCRIPT) -o $(OUTDIR)/$@ $(OBJ) $<
 
 # Remove build objects & targets
 clean:
