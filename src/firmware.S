@@ -165,9 +165,6 @@ pop_trap_frame:
     ld x2,  2*REGBYTES(sp)     # Load sp as last
     mret
     
-# Todo: Load trap frame from mem into regfile & csr
-# Todo: perform mret
-    
 # Handle ecall from HS-mode
 handle_hscall:
     ld t0, 10*REGBYTES(sp) # Save argument (a0) to t0
