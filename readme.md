@@ -1,4 +1,6 @@
-# Proof-of-concept hypervisor to test trap delegation in the RISC-V hypervisor extension
+# Proof-of-concept hypervisor
+
+> to test trap delegation in the RISC-V hypervisor extension
 
 ## ToDo
 
